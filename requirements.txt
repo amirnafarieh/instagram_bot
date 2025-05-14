@@ -1,2 +1,2 @@
+git+https://github.com/yt-dlp/yt-dlp.git
 pyTelegramBotAPI
-yt-dlp
