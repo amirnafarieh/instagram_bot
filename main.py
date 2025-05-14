@@ -1,3 +1,8 @@
+# در ابتدای main.py اضافه کن
+cookie_value = os.getenv("INSTAGRAM_COOKIE")
+with open("instagram_cookies.txt", "w") as f:
+    f.write(cookie_value)
+
 import os
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
