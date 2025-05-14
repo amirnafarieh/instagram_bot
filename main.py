@@ -3,6 +3,20 @@ import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 import yt_dlp
 
+import os
+
+sessionid = os.getenv("SESSIONID")
+ds_user_id = os.getenv("DS_USER_ID")
+
+if not sessionid or not ds_user_id:
+    raise ValueError("❌ SESSIONID یا DS_USER_ID در ENV تعریف نشده.")
+
+with open("instagram_cookies.txt", "w") as f:
+    f.write("# Netscape HTTP Cookie File\n")
+    f.write(".instagram.com\tTRUE\t/\tTRUE\t9999999999\tsessionid\t" + sessionid + "\n")
+    f.write(".instagram.com\tTRUE\t/\tTRUE\t9999999999\tds_user_id\t" + ds_user_id + "\n")
+
+
 # 🟩 ساخت فایل کوکی به فرمت Netscape
 sessionid = os.getenv("SESSIONID")
 ds_user_id = os.getenv("DS_USER_ID")
