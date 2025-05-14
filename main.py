@@ -3,15 +3,21 @@ import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 import yt_dlp
 
-# 🟩 ساخت فایل کوکی از متغیر محیطی
-cookie_value = os.getenv("INSTAGRAM_COOKIE")
-with open("instagram_cookies.txt", "w") as f:
-    f.write(cookie_value)
+# 🟩 ساخت فایل کوکی به فرمت Netscape
+sessionid = os.getenv("SESSIONID")
+ds_user_id = os.getenv("DS_USER_ID")
 
-# 🟩 توکن ربات از محیط اجرا
+if not sessionid or not ds_user_id:
+    raise ValueError("❌ SESSIONID یا DS_USER_ID در ENV تعریف نشده.")
+
+with open("instagram_cookies.txt", "w") as f:
+    f.write(f".instagram.com\tTRUE\t/\tTRUE\t9999999999\tsessionid\t{sessionid}\n")
+    f.write(f".instagram.com\tTRUE\t/\tTRUE\t9999999999\tds_user_id\t{ds_user_id}\n")
+
+# 🟩 توکن ربات
 TOKEN = os.getenv("BOT_TOKEN")
 if not TOKEN:
-    raise ValueError("❌ BOT_TOKEN is not set in environment variables.")
+    raise ValueError("❌ BOT_TOKEN در ENV تعریف نشده.")
 
 bot = telebot.TeleBot(TOKEN)
 
@@ -23,7 +29,7 @@ user_links = {}
 def welcome(message):
     bot.send_message(
         message.chat.id,
-        "👋سلام! لینک پست، استوری یا هایلایت اینستاگرام رو بفرست !"
+        "👋 سلام! لینک پست، استوری یا هایلایت اینستاگرام رو بفرست. اگر محتوای خصوصی باشه هم مشکلی نیست!"
     )
 
 @bot.message_handler(func=lambda m: 'instagram.com' in m.text)
