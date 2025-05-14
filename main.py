@@ -1,19 +1,22 @@
-# در ابتدای main.py اضافه کن
-cookie_value = os.getenv("INSTAGRAM_COOKIE")
-with open("instagram_cookies.txt", "w") as f:
-    f.write(cookie_value)
-
 import os
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 import yt_dlp
 
+# 🟩 ساخت فایل کوکی از متغیر محیطی
+cookie_value = os.getenv("INSTAGRAM_COOKIE")
+with open("instagram_cookies.txt", "w") as f:
+    f.write(cookie_value)
+
+# 🟩 توکن ربات از محیط اجرا
 TOKEN = os.getenv("BOT_TOKEN")
+if not TOKEN:
+    raise ValueError("❌ BOT_TOKEN is not set in environment variables.")
+
 bot = telebot.TeleBot(TOKEN)
 
 DOWNLOAD_DIR = "downloads"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
-COOKIE_FILE = "instagram_cookies.txt"
 user_links = {}
 
 @bot.message_handler(commands=['start'])
@@ -42,7 +45,7 @@ def download_content(call):
             'outtmpl': f'{DOWNLOAD_DIR}/%(title)s.%(ext)s',
             'quiet': True,
             'noplaylist': True,
-            'cookiefile': COOKIE_FILE
+            'cookiefile': "instagram_cookies.txt"
         }
 
         downloaded_files = []
@@ -72,3 +75,5 @@ def download_content(call):
 
     except Exception as e:
         bot.send_message(chat_id, f"❌ خطا در دانلود:\n{e}")
+
+bot.infinity_polling()
