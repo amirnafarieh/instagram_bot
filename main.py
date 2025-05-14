@@ -6,73 +6,64 @@ import yt_dlp
 TOKEN = os.getenv("BOT_TOKEN")
 bot = telebot.TeleBot(TOKEN)
 
-user_links = {}  # ذخیره لینک ارسالی کاربران
 DOWNLOAD_DIR = "downloads"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+COOKIE_FILE = "instagram_cookies.txt"
+user_links = {}
 
 @bot.message_handler(commands=['start'])
-def send_welcome(message):
+def welcome(message):
     bot.send_message(
         message.chat.id,
-        "👋 سلام! خوش اومدی به ربات دانلود از اینستاگرام.\n\n📥 لطفاً لینک پست اینستاگرام رو بفرست تا بتونی ویدئو یا صداشو دریافت کنی."
+        "👋 سلام! لینک پست، استوری یا هایلایت اینستاگرام رو بفرست. اگر محتوای خصوصی باشه هم مشکلی نیست!"
     )
 
 @bot.message_handler(func=lambda m: 'instagram.com' in m.text)
-def handle_instagram_link(message):
+def handle_link(message):
     user_links[message.chat.id] = message.text
 
-    # کلیدهای شیشه‌ای برای انتخاب نوع فایل
     markup = InlineKeyboardMarkup()
-    markup.row(
-        InlineKeyboardButton("🎥 ویدیو (MP4)", callback_data="video"),
-        InlineKeyboardButton("🎧 صدا (MP3)", callback_data="audio")
-    )
-    bot.send_message(
-        message.chat.id,
-        "✅ لینک دریافت شد! حالا انتخاب کن که می‌خوای ویدیو بگیری یا فقط صدا:",
-        reply_markup=markup
-    )
+    markup.add(InlineKeyboardButton("📥 دانلود محتوا", callback_data="download"))
+    bot.send_message(message.chat.id, "✅ لینک دریافت شد. برای ادامه روی دکمه کلیک کن:", reply_markup=markup)
 
-@bot.callback_query_handler(func=lambda call: call.data in ['video', 'audio'])
-def process_format_selection(call):
+@bot.callback_query_handler(func=lambda call: call.data == "download")
+def download_content(call):
     chat_id = call.message.chat.id
-    choice = call.data
     url = user_links.get(chat_id)
-
-    if not url:
-        bot.send_message(chat_id, "❌ لینک پیدا نشد. لطفاً دوباره لینک اینستاگرام رو بفرست.")
-        return
-
-    bot.send_message(chat_id, "⏳ در حال پردازش و دانلود فایل، لطفاً صبر کن...")
+    bot.send_message(chat_id, "⏳ در حال پردازش لینک اینستاگرام...")
 
     try:
-        # تنظیمات yt-dlp برای ویدیو یا صدا
-        outtmpl = f'{DOWNLOAD_DIR}/%(title)s.%(ext)s'
         ydl_opts = {
-            'outtmpl': outtmpl,
+            'outtmpl': f'{DOWNLOAD_DIR}/%(title)s.%(ext)s',
             'quiet': True,
-            'format': 'bestaudio/best' if choice == 'audio' else 'bestvideo+bestaudio/best',
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'mp3',
-                'preferredquality': '192',
-            }] if choice == 'audio' else []
+            'noplaylist': True,
+            'cookiefile': COOKIE_FILE
         }
+
+        downloaded_files = []
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
-            filepath = ydl.prepare_filename(info)
-            if choice == 'audio':
-                filepath = filepath.rsplit('.', 1)[0] + '.mp3'
 
-        # ارسال فایل به کاربر
-        with open(filepath, 'rb') as f:
-            if choice == 'audio':
-                bot.send_audio(chat_id, f)
+            if 'entries' in info:
+                for entry in info['entries']:
+                    path = ydl.prepare_filename(entry)
+                    ext = entry.get('ext', 'mp4')
+                    downloaded_files.append((path, ext))
             else:
-                bot.send_video(chat_id, f)
+                path = ydl.prepare_filename(info)
+                ext = info.get('ext', 'mp4')
+                downloaded_files.append((path, ext))
 
-        os.remove(filepath)
+        for file_path, ext in downloaded_files:
+            with open(file_path, 'rb') as f:
+                if ext in ['jpg', 'jpeg', 'png']:
+                    bot.send_photo(chat_id, f)
+                elif ext == 'mp4':
+                    bot.send_video(chat_id, f)
+                else:
+                    bot.send_document(chat_id, f)
+            os.remove(file_path)
 
     except Exception as e:
-        bot.send_message(chat_id, f"❌ خطا در پردازش فایل: {str(e)}")
+        bot.send_message(chat_id, f"❌ خطا در دانلود:\n{e}")
