@@ -1,4 +1,16 @@
 import os
+
+# ایجاد دقیق فایل کوکی از متن آماده
+cookie_text = """# Netscape HTTP Cookie File
+.instagram.com\tTRUE\t/\tTRUE\t9999999999\tds_user_id\t63966829241
+.instagram.com\tTRUE\t/\tTRUE\t9999999999\tsessionid\t63966829241%3A1jphytJbfG5RJD%3A12%3AAYdKr-jtNFjL1YlBJkXWgdZBxxZt_MOh7heLrB9KbQ
+"""
+
+with open("instagram_cookies.txt", "w", encoding="utf-8") as f:
+    f.write(cookie_text)
+
+
+import os
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 import yt_dlp
